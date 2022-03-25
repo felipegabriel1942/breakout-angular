@@ -119,6 +119,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "breakout-angular"
+    }
+  },
+  "defaultProject": "breakout-angular",
+  "cli": {
+    "analytics": false
+  }
 }
