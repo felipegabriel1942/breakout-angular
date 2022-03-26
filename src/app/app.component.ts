@@ -1,6 +1,17 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { Ball } from './model/ball.model';
 import { Paddle } from './model/paddle.model';
+
+enum KEYS {
+  LEFT = 'ArrowLeft',
+  RIGHT = 'ArrowRight',
+}
 
 @Component({
   selector: 'app-root',
@@ -16,54 +27,92 @@ export class AppComponent implements OnInit {
   paddle: Paddle;
   dx = 2;
   dy = -2;
-  x;
-  y;
-  r = 10;
+  paddleDirection;
+  secondsPerFrame = 10;
+
+  constructor() {}
 
   ngOnInit(): void {
     this.ctx = this.canvas.nativeElement.getContext('2d');
-
-    this.createBall();
-    this.createPaddle();
-
-    this.gameLoop();
-  }
-
-  createBall(): void {
-    this.ball = new Ball(this.ctx);
-    this.x = this.canvas.nativeElement.width / 2;
-    this.y = this.canvas.nativeElement.height - 30;
-  }
-
-  createPaddle(): void {
+    this.ball = new Ball(this.ctx, 10);
     this.paddle = new Paddle(this.ctx);
+    this.startGameLoop();
   }
 
-  gameLoop(): void {
-    setInterval(() => {
-      this.moveBall();
-      this.paddle.draw();
-    }, 10);
+  startGameLoop(): void {
+    setInterval((_) => this.updateCanvas(), this.secondsPerFrame);
   }
 
-  moveBall(): void {
-    this.ball.draw(this.x, this.y, this.r);
+  updateCanvas(): void {
+    this.clearCanvas();
+    this.drawElements();
+  }
 
-    if (
-      this.x + this.dx > this.canvas.nativeElement.width - this.r ||
-      this.x + this.dx < this.r
-    ) {
+  clearCanvas(): void {
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+  }
+
+  drawElements(): void {
+    this.ball.draw(this.recalculateBallPosition());
+    this.paddle.draw(this.recalculatePaddlePosition());
+  }
+
+  recalculateBallPosition(): { x: number; y: number } {
+    if (this.isBallCollindingWithAxisX()) {
       this.dx = -this.dx;
     }
 
-    if (
-      this.y + this.dy > this.canvas.nativeElement.height - this.r ||
-      this.y + this.dy < this.r
-    ) {
+    if (this.isBallCollindingWithAxisY()) {
       this.dy = -this.dy;
     }
 
-    this.x += this.dx;
-    this.y += this.dy;
+    return {
+      x: this.ball.x + this.dx,
+      y: this.ball.y + this.dy,
+    };
+  }
+
+  isBallCollindingWithAxisX(): boolean {
+    return (
+      this.ball.x + this.dx >
+        this.canvas.nativeElement.width - this.ball.radius ||
+      this.ball.x + this.dx < this.ball.radius
+    );
+  }
+
+  isBallCollindingWithAxisY(): boolean {
+    return (
+      this.ball.y + this.dy >
+        this.canvas.nativeElement.height - this.ball.radius ||
+      this.ball.y + this.dy < this.ball.radius
+    );
+  }
+
+  recalculatePaddlePosition(): number {
+    let x = this.paddle.x;
+
+    if (this.paddleDirection === KEYS.LEFT) {
+      x -= 7;
+
+      if (this.paddle.x < 0) {
+        x = 0;
+      }
+    }
+
+    if (this.paddleDirection === KEYS.RIGHT) {
+      x += 7;
+
+      if (this.paddle.x + 75 > this.canvas.nativeElement.width) {
+        x = this.canvas.nativeElement.width - 75;
+      }
+    }
+
+    return x;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  @HostListener('window:keyup', ['$event'])
+  captureUserInput(event: KeyboardEvent): void {
+    this.paddleDirection = event.type === 'keyup' ? null : event.key;
   }
 }
