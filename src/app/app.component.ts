@@ -8,11 +8,10 @@ import {
 import { Ball } from './model/ball.model';
 import { Paddle } from './model/paddle.model';
 
-enum KEYS {
+export enum KEYS {
   LEFT = 'ArrowLeft',
   RIGHT = 'ArrowRight',
 }
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -27,16 +26,19 @@ export class AppComponent implements OnInit {
   paddle: Paddle;
   dx = 2;
   dy = -2;
-  paddleDirection;
   secondsPerFrame = 10;
 
   constructor() {}
 
   ngOnInit(): void {
-    this.ctx = this.canvas.nativeElement.getContext('2d');
-    this.ball = new Ball(this.ctx, 10);
-    this.paddle = new Paddle(this.ctx);
+    this.createGameObjects();
     this.startGameLoop();
+  }
+
+  createGameObjects(): void {
+    this.ctx = this.canvas.nativeElement.getContext('2d');
+    this.ball = new Ball({ ctx: this.ctx, radius: 10 });
+    this.paddle = new Paddle({ ctx: this.ctx });
   }
 
   startGameLoop(): void {
@@ -57,6 +59,28 @@ export class AppComponent implements OnInit {
     this.paddle.draw(this.recalculatePaddlePosition());
   }
 
+  recalculatePaddlePosition(): number {
+    let x = this.paddle.x;
+
+    if (this.paddle.isMovingLeft) {
+      x -= 7;
+
+      if (this.paddle.x < 0) {
+        x = 0;
+      }
+    }
+
+    if (this.paddle.isMovingRight) {
+      x += 7;
+
+      if (this.paddle.x + 75 > this.canvas.nativeElement.width) {
+        x = this.canvas.nativeElement.width - 75;
+      }
+    }
+
+    return x;
+  }
+
   recalculateBallPosition(): { x: number; y: number } {
     if (this.isBallCollindingWithAxisX()) {
       this.dx = -this.dx;
@@ -73,46 +97,42 @@ export class AppComponent implements OnInit {
   }
 
   isBallCollindingWithAxisX(): boolean {
-    return (
+    const leftWall =
       this.ball.x + this.dx >
-        this.canvas.nativeElement.width - this.ball.radius ||
-      this.ball.x + this.dx < this.ball.radius
-    );
+      this.canvas.nativeElement.width - this.ball.radius;
+
+    const rigthWall = this.ball.x + this.dx < this.ball.radius;
+
+    return leftWall || rigthWall;
   }
 
   isBallCollindingWithAxisY(): boolean {
-    return (
+    const upperWall =
       this.ball.y + this.dy >
-        this.canvas.nativeElement.height - this.ball.radius ||
-      this.ball.y + this.dy < this.ball.radius
-    );
-  }
+      this.canvas.nativeElement.height - this.ball.radius;
 
-  recalculatePaddlePosition(): number {
-    let x = this.paddle.x;
+    const bottomWall = this.ball.y + this.dy < this.ball.radius;
 
-    if (this.paddleDirection === KEYS.LEFT) {
-      x -= 7;
-
-      if (this.paddle.x < 0) {
-        x = 0;
-      }
-    }
-
-    if (this.paddleDirection === KEYS.RIGHT) {
-      x += 7;
-
-      if (this.paddle.x + 75 > this.canvas.nativeElement.width) {
-        x = this.canvas.nativeElement.width - 75;
-      }
-    }
-
-    return x;
+    return upperWall || bottomWall;
   }
 
   @HostListener('window:keydown', ['$event'])
   @HostListener('window:keyup', ['$event'])
   captureUserInput(event: KeyboardEvent): void {
-    this.paddleDirection = event.type === 'keyup' ? null : event.key;
+    if (event.type === 'keydown') {
+      if (event.key === KEYS.LEFT) {
+        this.paddle.isMovingLeft = true;
+      } else if (event.key === KEYS.RIGHT) {
+        this.paddle.isMovingRight = true;
+      }
+    }
+
+    if (event.type === 'keyup') {
+      if (event.key === KEYS.LEFT) {
+        this.paddle.isMovingLeft = false;
+      } else if (event.key === KEYS.RIGHT) {
+        this.paddle.isMovingRight = false;
+      }
+    }
   }
 }
