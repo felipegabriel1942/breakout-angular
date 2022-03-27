@@ -6,6 +6,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { Ball } from './model/ball.model';
+import { Brick } from './model/brick.model';
 import { Paddle } from './model/paddle.model';
 
 export enum KEYS {
@@ -24,9 +25,11 @@ export class AppComponent implements OnInit {
   ctx: CanvasRenderingContext2D;
   ball: Ball;
   paddle: Paddle;
+  bricks: Brick[][] = [];
   dx = 2;
   dy = -2;
   secondsPerFrame = 10;
+  gameLoop;
 
   constructor() {}
 
@@ -39,10 +42,26 @@ export class AppComponent implements OnInit {
     this.ctx = this.canvas.nativeElement.getContext('2d');
     this.ball = new Ball({ ctx: this.ctx, radius: 10 });
     this.paddle = new Paddle({ ctx: this.ctx });
+    this.createBricks();
+  }
+
+  createBricks(): void {
+    for (let c = 0; c < 5; c++) {
+      const row = [];
+
+      for (let r = 0; r < 3; r++) {
+        row.push(new Brick({ ctx: this.ctx }));
+      }
+
+      this.bricks.push(row);
+    }
   }
 
   startGameLoop(): void {
-    setInterval((_) => this.updateCanvas(), this.secondsPerFrame);
+    this.gameLoop = setInterval(
+      (_) => this.updateCanvas(),
+      this.secondsPerFrame
+    );
   }
 
   updateCanvas(): void {
@@ -57,6 +76,24 @@ export class AppComponent implements OnInit {
   drawElements(): void {
     this.ball.draw(this.recalculateBallPosition());
     this.paddle.draw(this.recalculatePaddlePosition());
+    this.drawBricks();
+  }
+
+  drawBricks(): void {
+    for (let c = 0; c < this.bricks.length; c++) {
+      const row = this.bricks[c];
+
+      for (let r = 0; r < row.length; r++) {
+        const brick = this.bricks[c][r];
+        const x = c * (brick.width + brick.padding) + brick.offsetLeft;
+        const y = r * (brick.height + brick.padding) + brick.offsetTop;
+
+        row[r].draw({
+          x,
+          y,
+        });
+      }
+    }
   }
 
   recalculatePaddlePosition(): number {
@@ -107,13 +144,23 @@ export class AppComponent implements OnInit {
   }
 
   isBallCollindingWithAxisY(): boolean {
-    const upperWall =
+    const bottomWall =
       this.ball.y + this.dy >
       this.canvas.nativeElement.height - this.ball.radius;
 
-    const bottomWall = this.ball.y + this.dy < this.ball.radius;
+    const upperWall = this.ball.y + this.dy < this.ball.radius;
 
-    return upperWall || bottomWall;
+    if (bottomWall) {
+      // this.gameOver();
+    }
+
+    return upperWall;
+  }
+
+  gameOver(): void {
+    alert('GAME OVER');
+    document.location.reload();
+    clearInterval(this.gameLoop);
   }
 
   @HostListener('window:keydown', ['$event'])
