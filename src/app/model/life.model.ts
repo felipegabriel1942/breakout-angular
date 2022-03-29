@@ -11,7 +11,7 @@ export class Life {
     return this._points;
   }
 
-  set points(points: any) {
+  set points(points: number) {
     this._points = points;
   }
 
