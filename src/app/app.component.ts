@@ -87,6 +87,11 @@ export class AppComponent implements OnInit {
           this.dy = -this.dy;
           brick.alive = false;
           this.score.points++;
+
+          if (this.score.points === row.length * this.bricks.length) {
+            alert('YOU WIN, CONGRATS!');
+            document.location.reload();
+          }
         }
       }
     }
