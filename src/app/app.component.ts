@@ -7,7 +7,9 @@ import {
 } from '@angular/core';
 import { Ball } from './model/ball.model';
 import { Brick } from './model/brick.model';
+import { Life } from './model/life.model';
 import { Paddle } from './model/paddle.model';
+import { Score } from './model/score.mode';
 
 export enum KEYS {
   LEFT = 'ArrowLeft',
@@ -26,6 +28,8 @@ export class AppComponent implements OnInit {
   ball: Ball;
   paddle: Paddle;
   bricks: Brick[][] = [];
+  score: Score;
+  life: Life;
   dx = 2;
   dy = -2;
   secondsPerFrame = 10;
@@ -42,6 +46,8 @@ export class AppComponent implements OnInit {
     this.ctx = this.canvas.nativeElement.getContext('2d');
     this.ball = new Ball({ ctx: this.ctx, radius: 10 });
     this.paddle = new Paddle({ ctx: this.ctx });
+    this.score = new Score({ ctx: this.ctx });
+    this.life = new Life({ ctx: this.ctx });
     this.createBricks();
   }
 
@@ -58,10 +64,32 @@ export class AppComponent implements OnInit {
   }
 
   startGameLoop(): void {
-    this.gameLoop = setInterval(
-      (_) => this.updateCanvas(),
-      this.secondsPerFrame
-    );
+    this.gameLoop = setInterval((_) => {
+      this.updateCanvas();
+      this.collisionDetection();
+    }, this.secondsPerFrame);
+  }
+
+  collisionDetection(): void {
+    for (let c = 0; c < this.bricks.length; c++) {
+      const row = this.bricks[c];
+
+      for (let r = 0; r < row.length; r++) {
+        const brick = row[r];
+
+        if (
+          this.ball.x > brick.x &&
+          this.ball.x < brick.x + brick.width &&
+          this.ball.y > brick.y &&
+          this.ball.y < brick.y + brick.height &&
+          brick.alive
+        ) {
+          this.dy = -this.dy;
+          brick.alive = false;
+          this.score.points++;
+        }
+      }
+    }
   }
 
   updateCanvas(): void {
@@ -76,6 +104,8 @@ export class AppComponent implements OnInit {
   drawElements(): void {
     this.ball.draw(this.recalculateBallPosition());
     this.paddle.draw(this.recalculatePaddlePosition());
+    this.score.draw();
+    this.life.draw();
     this.drawBricks();
   }
 
@@ -85,13 +115,13 @@ export class AppComponent implements OnInit {
 
       for (let r = 0; r < row.length; r++) {
         const brick = this.bricks[c][r];
-        const x = c * (brick.width + brick.padding) + brick.offsetLeft;
-        const y = r * (brick.height + brick.padding) + brick.offsetTop;
 
-        row[r].draw({
-          x,
-          y,
-        });
+        if (brick.alive) {
+          const x = c * (brick.width + brick.padding) + brick.offsetLeft;
+          const y = r * (brick.height + brick.padding) + brick.offsetTop;
+
+          row[r].draw({ x, y });
+        }
       }
     }
   }
@@ -134,27 +164,35 @@ export class AppComponent implements OnInit {
   }
 
   isBallCollindingWithAxisX(): boolean {
-    const leftWall =
+    const isCollidingWithLeftWall =
       this.ball.x + this.dx >
       this.canvas.nativeElement.width - this.ball.radius;
 
-    const rigthWall = this.ball.x + this.dx < this.ball.radius;
+    const isCollidingWithRigthWall = this.ball.x + this.dx < this.ball.radius;
 
-    return leftWall || rigthWall;
+    return isCollidingWithLeftWall || isCollidingWithRigthWall;
   }
 
   isBallCollindingWithAxisY(): boolean {
-    const bottomWall =
+    const isCollidingWithBottomWall =
       this.ball.y + this.dy >
       this.canvas.nativeElement.height - this.ball.radius;
 
-    const upperWall = this.ball.y + this.dy < this.ball.radius;
+    const isCollidingWithUpperWall = this.ball.y + this.dy < this.ball.radius;
 
-    if (bottomWall) {
-      // this.gameOver();
+    const isCollidingWithThePaddle =
+      this.ball.x > this.paddle.x &&
+      this.ball.x < this.paddle.x + this.paddle.width;
+
+    if (isCollidingWithBottomWall && !isCollidingWithThePaddle) {
+      this.life.points--;
+
+      if (this.life.points === 0) {
+        this.gameOver();
+      }
     }
 
-    return upperWall;
+    return isCollidingWithUpperWall || isCollidingWithBottomWall;
   }
 
   gameOver(): void {
@@ -180,6 +218,26 @@ export class AppComponent implements OnInit {
       } else if (event.key === KEYS.RIGHT) {
         this.paddle.isMovingRight = false;
       }
+    }
+  }
+
+  moveLeft(event: TouchEvent): void {
+    if (event.type === 'touchstart') {
+      this.paddle.isMovingLeft = true;
+    }
+
+    if (event.type === 'touchend') {
+      this.paddle.isMovingLeft = false;
+    }
+  }
+
+  moveRight(event: TouchEvent): void {
+    if (event.type === 'touchstart') {
+      this.paddle.isMovingRight = true;
+    }
+
+    if (event.type === 'touchend') {
+      this.paddle.isMovingRight = false;
     }
   }
 }

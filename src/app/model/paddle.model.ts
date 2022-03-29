@@ -4,11 +4,13 @@ export class Paddle {
   private _x: number;
   private _isMovingLeft: boolean;
   private _isMovingRight: boolean;
+  private _width: number;
 
   constructor({ ctx = null, color = '#0095DD' }) {
+    this._width = 75;
     this._ctx = ctx;
     this._color = color;
-    this._x = (this._ctx.canvas.width - 75) / 2;
+    this._x = (this._ctx.canvas.width - this._width) / 2;
     this._isMovingLeft = false;
     this._isMovingRight = false;
   }
@@ -31,6 +33,10 @@ export class Paddle {
 
   get isMovingRight(): boolean {
     return this._isMovingRight;
+  }
+
+  get width(): number {
+    return this._width;
   }
 
   draw(x: number): void {

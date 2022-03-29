@@ -7,6 +7,7 @@ export class Brick {
   private readonly _offsetLeft: number;
   private _x?: number;
   private _y?: number;
+  private _alive: boolean;
 
   constructor({ ctx = null }) {
     this._ctx = ctx;
@@ -17,6 +18,7 @@ export class Brick {
     this._offsetLeft = 30;
     this._x = 0;
     this._y = 0;
+    this._alive = true;
   }
 
   get padding(): number {
@@ -39,7 +41,25 @@ export class Brick {
     return this._height;
   }
 
+  get x(): number {
+    return this._x;
+  }
+
+  get y(): number {
+    return this._y;
+  }
+
+  set alive(alive: boolean) {
+    this._alive = alive;
+  }
+
+  get alive(): boolean {
+    return this._alive;
+  }
+
   draw(position: { x: number; y: number }): void {
+    this._x = position.x;
+    this._y = position.y;
     this._ctx.beginPath();
     this._ctx.rect(position.x, position.y, this._width, this._height);
     this._ctx.fillStyle = '#0095DD';
