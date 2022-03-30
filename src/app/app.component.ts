@@ -52,10 +52,10 @@ export class AppComponent implements OnInit {
   }
 
   createBricks(): void {
-    for (let c = 0; c < 5; c++) {
+    for (let c = 0; c < 3; c++) {
       const row = [];
 
-      for (let r = 0; r < 3; r++) {
+      for (let r = 0; r < 2; r++) {
         row.push(new Brick({ ctx: this.ctx }));
       }
 
@@ -67,6 +67,7 @@ export class AppComponent implements OnInit {
     this.gameLoop = setInterval((_) => {
       this.updateCanvas();
       this.collisionDetection();
+      this.checkGameState();
     }, this.secondsPerFrame);
   }
 
@@ -87,14 +88,28 @@ export class AppComponent implements OnInit {
           this.dy = -this.dy;
           brick.alive = false;
           this.score.points++;
-
-          if (this.score.points === row.length * this.bricks.length) {
-            alert('YOU WIN, CONGRATS!');
-            document.location.reload();
-          }
         }
       }
     }
+  }
+
+  checkGameState(): void {
+    if (this.life.points === 0) {
+      alert('GAME OVER');
+      document.location.reload();
+      clearInterval(this.gameLoop);
+    } else if (this.playerDestroiedAllBricks()) {
+      alert('YOU WIN, CONGRATS!');
+      document.location.reload();
+      clearInterval(this.gameLoop);
+    }
+  }
+
+  playerDestroiedAllBricks(): boolean {
+    return (
+      this.bricks.filter((c) => c.filter((r) => r.alive).length === 0)
+        .length === this.bricks.length
+    );
   }
 
   updateCanvas(): void {
@@ -191,19 +206,9 @@ export class AppComponent implements OnInit {
 
     if (isCollidingWithBottomWall && !isCollidingWithThePaddle) {
       this.life.points--;
-
-      if (this.life.points === 0) {
-        this.gameOver();
-      }
     }
 
     return isCollidingWithUpperWall || isCollidingWithBottomWall;
-  }
-
-  gameOver(): void {
-    alert('GAME OVER');
-    document.location.reload();
-    clearInterval(this.gameLoop);
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -223,26 +228,6 @@ export class AppComponent implements OnInit {
       } else if (event.key === KEYS.RIGHT) {
         this.paddle.isMovingRight = false;
       }
-    }
-  }
-
-  moveLeft(event: TouchEvent): void {
-    if (event.type === 'touchstart') {
-      this.paddle.isMovingLeft = true;
-    }
-
-    if (event.type === 'touchend') {
-      this.paddle.isMovingLeft = false;
-    }
-  }
-
-  moveRight(event: TouchEvent): void {
-    if (event.type === 'touchstart') {
-      this.paddle.isMovingRight = true;
-    }
-
-    if (event.type === 'touchend') {
-      this.paddle.isMovingRight = false;
     }
   }
 }

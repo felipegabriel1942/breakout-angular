@@ -4,8 +4,12 @@
   margin: 0;
 }
 
+html, body {
+  height: 100vh;
+}
+
 canvas {
   background: #eee;
-  display: block;
   margin: 0 auto;
+  display: block;
 }

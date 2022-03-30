@@ -11,7 +11,7 @@ export class Brick {
 
   constructor({ ctx = null }) {
     this._ctx = ctx;
-    this._width = 75;
+    this._width = 60;
     this._height = 20;
     this._padding = 10;
     this._offsetTop = 30;
